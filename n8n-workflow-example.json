@@ -1,0 +1,75 @@
+{
+  "name": "Scrapr PDF Extraction Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/watch/engineering-docs",
+        "event": "create"
+      },
+      "name": "Watch for PDFs",
+      "type": "n8n-nodes-base.fileWatcher",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://scrapr-api:8001/extract",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "output_format",
+              "value": "markdown"
+            },
+            {
+              "name": "use_ocr",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "bodyContentType": "multipart-form-data"
+        }
+      },
+      "name": "Call Scrapr API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "fileName": "={{$node[\"Watch for PDFs\"].json[\"fileName\"].replace('.pdf', '.md')}}",
+        "filePath": "/output/obsidian/"
+      },
+      "name": "Save to Obsidian",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Watch for PDFs": {
+      "main": [
+        [
+          {
+            "node": "Call Scrapr API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Scrapr API": {
+      "main": [
+        [
+          {
+            "node": "Save to Obsidian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

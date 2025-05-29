@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  scrapr:
+    build: .
+    container_name: scrapr-api
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./output:/app/output
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

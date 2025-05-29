@@ -1,0 +1,9 @@
+# Minimal requirements for basic PDF extraction
+pdfplumber==0.10.3
+pymupdf==1.23.8
+python-dotenv==1.0.0
+
+# Optional for OCR (install separately if needed)
+# pytesseract==0.3.10
+# pdf2image==1.16.3
+# Pillow==10.1.0
