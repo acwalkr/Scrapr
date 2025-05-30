@@ -1,42 +1,70 @@
 """
-Quick test to verify Scrapr setup before running full PTI extraction
+Quick test script for enhanced PDF extraction
 """
-import sys
 import os
+import sys
+from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def test_imports():
-    """Test if all modules can be imported"""
-    print("Testing Scrapr imports...")
+def test_basic_extraction(pdf_path: str):
+    """Test basic PDF extraction"""
+    print(f"Testing extraction on: {pdf_path}")
     
+    # First, let's check what we have
     try:
-        print("✓ Importing PDF extractor...", end="")
-        from core.extractors.pdf_extractor import PDFExtractor
-        print(" Success!")
-        
-        print("✓ Importing Markdown processor...", end="")
-        from core.processors.markdown_processor import MarkdownProcessor
-        print(" Success!")
-        
-        print("✓ Importing dependencies...", end="")
         import pdfplumber
+        print("✓ pdfplumber is installed")
+    except ImportError:
+        print("✗ pdfplumber is NOT installed")
+        
+    try:
         import pytesseract
-        import cv2
-        print(" Success!")
+        print("✓ pytesseract is installed")
+    except ImportError:
+        print("✗ pytesseract is NOT installed")
         
-        print("\nAll imports successful! Scrapr is ready to test.")
-        return True
+    try:
+        from pdf2image import convert_from_path
+        print("✓ pdf2image is installed")
+    except ImportError:
+        print("✗ pdf2image is NOT installed")
+    
+    # Now try to import our extractor
+    try:
+        from scrapr.extractors.enhanced_pdfplumber_extractor import EnhancedContextualPDFExtractor
+        print("✓ Enhanced extractor imported successfully")
         
-    except ImportError as e:
-        print(f"\n✗ Import Error: {e}")
-        print("\nPlease install missing dependencies:")
-        print("  pip install -r requirements.txt")
-        return False
+        # Try to extract
+        extractor = EnhancedContextualPDFExtractor(
+            extract_images=True,
+            embed_images_base64=True,
+            preserve_context=True
+        )
+        
+        results = extractor.extract_from_pdf(pdf_path)
+        
+        # Save output
+        output_path = Path(pdf_path).stem + "_extracted.md"
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(results['markdown'])
+            
+        print(f"\n✓ Extraction complete!")
+        print(f"  Output saved to: {output_path}")
+        print(f"  Statistics: {results['statistics']}")
+        
+    except Exception as e:
+        print(f"\n✗ Error during extraction: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
-    if test_imports():
-        print("\nYou can now run: python test_pti_document.py")
+    if len(sys.argv) > 1:
+        pdf_path = sys.argv[1]
+        if os.path.exists(pdf_path):
+            test_basic_extraction(pdf_path)
+        else:
+            print(f"File not found: {pdf_path}")
     else:
-        print("\nFix the import errors before proceeding.")
+        print("Usage: python quick_test.py <path_to_pdf>")

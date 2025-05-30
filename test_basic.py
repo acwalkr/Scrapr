@@ -1,61 +1,52 @@
 """
-Simple PDF extraction test without heavy dependencies
-This will work without PyTorch/sentence-transformers
+Basic PDF text extraction test using only pdfplumber
 """
-import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import os
 
-def test_basic_extraction():
-    print("=" * 60)
-    print("SCRAPR - Basic PDF Test (No AI Dependencies)")
-    print("=" * 60)
-    
-    pdf_path = r"C:\Users\alex.walker\Desktop\AI Project\Strand\PTI Book\PTI DC10.1-08 Design of Post-Tensioned Slabs-on-Ground (1).pdf"
-    
-    if not os.path.exists(pdf_path):
-        print(f"ERROR: PDF file not found at: {pdf_path}")
-        return
-    
-    print(f"\nTesting with: {os.path.basename(pdf_path)}")
-    print(f"File size: {os.path.getsize(pdf_path) / 1024 / 1024:.2f} MB")
-    
+def test_basic_pdfplumber(pdf_path):
+    """Test basic PDF extraction with pdfplumber only"""
     try:
-        # Test with pdfplumber only
         import pdfplumber
         
-        print("\nAttempting basic text extraction with pdfplumber...")
+        print(f"Opening PDF: {pdf_path}")
         
         with pdfplumber.open(pdf_path) as pdf:
-            print(f"Number of pages: {len(pdf.pages)}")
+            print(f"PDF has {len(pdf.pages)} pages")
             
-            # Extract first page as sample
-            first_page = pdf.pages[0]
-            text = first_page.extract_text()
+            # Extract first page
+            page = pdf.pages[0]
+            text = page.extract_text()
             
             if text:
-                print("\n✓ Text extraction successful!")
-                print("\nFirst 500 characters:")
+                print("\nFirst 500 characters of extracted text:")
                 print("-" * 50)
                 print(text[:500])
                 print("-" * 50)
                 
-                # Check for tables
-                tables = first_page.extract_tables()
-                if tables:
-                    print(f"\n✓ Found {len(tables)} table(s) on first page")
-            else:
-                print("\n✗ No text found - this PDF might need OCR")
-                print("\nTo use OCR, you'll need:")
-                print("1. Install Tesseract from: https://github.com/UB-Mannheim/tesseract/wiki")
-                print("2. Run the full extraction script")
+                # Check if text is garbled
+                readable_chars = sum(1 for c in text if c.isalnum() or c.isspace())
+                total_chars = len(text)
+                readability = readable_chars / total_chars if total_chars > 0 else 0
                 
-    except ImportError as e:
-        print(f"\n✗ Missing dependency: {e}")
-        print("\nInstall basic dependencies with:")
-        print("pip install pdfplumber pymupdf")
+                print(f"\nText readability: {readability:.1%}")
+                if readability < 0.5:
+                    print("WARNING: Text appears to be garbled. OCR may be needed.")
+            else:
+                print("No text extracted from first page")
+                
+    except ImportError:
+        print("pdfplumber is not installed. Please run:")
+        print("pip install pdfplumber")
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"Error: {str(e)}")
 
 if __name__ == "__main__":
-    test_basic_extraction()
+    if len(sys.argv) > 1:
+        pdf_path = sys.argv[1]
+        if os.path.exists(pdf_path):
+            test_basic_pdfplumber(pdf_path)
+        else:
+            print(f"File not found: {pdf_path}")
+    else:
+        print("Usage: python test_basic.py <path_to_pdf>")
